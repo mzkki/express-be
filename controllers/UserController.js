@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../prisma/client');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
+const { Prisma } = require('@prisma/client');
 
 const findUsers = async (req, res) => {
   try {
@@ -99,4 +100,59 @@ const findUserById = async (req, res) => {
   }
 }
 
-module.exports = { findUsers, createUser, findUserById };
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({
+      success: false,
+      message: 'Validation error',
+      errors: errors.array()
+    })
+  }
+
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+  try {
+    const user = await prisma.user.update({
+      where: {
+        id: Number(id),
+      },
+      data: {
+        name: req.body.name,
+        email: req.body.email,
+        password: hashedPassword,
+      }
+    })
+
+    if (!user) {
+      return res.status(404).json({
+        succes: false,
+        message: `User with ID : ${id} not found`
+      })
+    }
+
+    res.status(200).send({
+      succes: true,
+      message: 'User updated successfully',
+      data: user
+    })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === 'P2025') {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        })
+      }
+    }
+    res.status(500).send({
+      succes: false,
+      message: 'Internal server error'
+    })
+  }
+}
+
+module.exports = { findUsers, createUser, findUserById, updateUser };
