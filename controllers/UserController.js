@@ -155,4 +155,35 @@ const updateUser = async (req, res) => {
   }
 }
 
-module.exports = { findUsers, createUser, findUserById, updateUser };
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.user.delete({
+      where: {
+        id: Number(id),
+      }
+    })
+
+    res.status(200).send({
+      succes: true,
+      message: 'User deleted successfully'
+    })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === 'P2025') {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        })
+      }
+    }
+    res.status(500).send({
+      succes: false,
+      message: 'Internal server error'
+    })
+    console.log(e);
+  }
+}
+
+module.exports = { findUsers, createUser, findUserById, updateUser, deleteUser };
