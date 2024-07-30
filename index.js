@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const router = require('./routes');
+const swagger = require('./utils/swagger');
 
 // initial express
 const app = express()
@@ -20,6 +21,8 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api', router);
+
+swagger(app)
 
 // starting server
 app.listen(port, () => {
